@@ -164,18 +164,25 @@ def place_qt_order(symbol, action, quantity):
 # ── LIVE PRICES (POLYGON) ─────────────────────────────────
 def get_prices():
     try:
-        symbols = ",".join(WATCHLIST)
-        url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={symbols}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        res = requests.get(url, headers=headers, timeout=10)
-        quotes = res.json().get("quoteResponse", {}).get("result", [])
         result = {}
-        for q in quotes:
-            sym = q.get("symbol")
-            price = q.get("regularMarketPrice", 0)
-            change = q.get("regularMarketChangePercent", 0)
-            if sym and price:
-                result[sym] = {"price": price, "change": round(change, 2)}
+        for sym in WATCHLIST[:6]:
+            try:
+                url = f"https://query2.finance.yahoo.com/v8/finance/chart/{sym}?interval=1m&range=1d"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json",
+                }
+                res = requests.get(url, headers=headers, timeout=8)
+                data = res.json()
+                meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
+                price = meta.get("regularMarketPrice", 0)
+                prev_close = meta.get("chartPreviousClose", price)
+                change = round(((price - prev_close) / prev_close * 100) if prev_close else 0, 2)
+                if price:
+                    result[sym] = {"price": price, "change": change}
+                time.sleep(0.3)
+            except Exception:
+                continue
         return result
     except Exception as e:
         logger.error(f"Price fetch error: {e}")
@@ -321,8 +328,13 @@ def bot_cycle():
 
 def bot_loop():
     global bot_running
+    last_qt_login = 0
     while bot_running:
         try:
+            if time.time() - last_qt_login > 25 * 60:
+                if QT_REFRESH_TOKEN:
+                    qt_login()
+                    last_qt_login = time.time()
             bot_cycle()
         except Exception as e:
             db_log(f"❌ Cycle error: {e}", "error")
