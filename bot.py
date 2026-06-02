@@ -165,22 +165,17 @@ def place_qt_order(symbol, action, quantity):
 def get_prices():
     try:
         result = {}
-        for sym in WATCHLIST[:6]:
+        finnhub_key = os.environ.get("FINNHUB_API_KEY", "")
+        for sym in WATCHLIST[:8]:
             try:
-                url = f"https://query2.finance.yahoo.com/v8/finance/chart/{sym}?interval=1m&range=1d"
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Accept": "application/json",
-                }
-                res = requests.get(url, headers=headers, timeout=8)
+                url = f"https://finnhub.io/api/v1/quote?symbol={sym}&token={finnhub_key}"
+                res = requests.get(url, timeout=6)
                 data = res.json()
-                meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
-                price = meta.get("regularMarketPrice", 0)
-                prev_close = meta.get("chartPreviousClose", price)
-                change = round(((price - prev_close) / prev_close * 100) if prev_close else 0, 2)
+                price = data.get("c", 0)
+                prev = data.get("pc", price)
+                change = round(((price - prev) / prev * 100) if prev else 0, 2)
                 if price:
                     result[sym] = {"price": price, "change": change}
-                time.sleep(0.3)
             except Exception:
                 continue
         return result
@@ -188,7 +183,6 @@ def get_prices():
         logger.error(f"Price fetch error: {e}")
         return {}
 
-# ── MARKET HOURS ──────────────────────────────────────────
 def market_status():
     et = pytz.timezone("America/New_York")
     now = datetime.now(et)
