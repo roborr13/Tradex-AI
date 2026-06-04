@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="TradeX AI"/>
+<title>TradeX AI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#0a0e1a;--surface:#111827;--card:#161d2e;--border:#1e2d45;--accent:#00d4ff;--green:#00e676;--red:#ff4757;--yellow:#ffd600;--text:#e8f0fe;--muted:#5c7a9e;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;min-height:100vh;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.header{border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#0057ff);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo-text{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:1px;}
+.logo-sub{font-size:10px;color:var(--green);}
+.header-right{display:flex;gap:14px;}
+.hstat{text-align:right;}
+.hstat-label{font-size:10px;color:var(--muted);}
+.hstat-val{font-size:13px;font-weight:700;color:var(--accent);}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{flex:1;min-width:56px;padding:10px 4px 8px;text-align:center;font-size:9px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-icon{font-size:17px;display:block;margin-bottom:2px;}
+.page{display:none;padding:14px;}
+.page.active{display:block;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.page-title{font-size:18px;font-weight:700;margin-bottom:2px;}
+.page-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.section-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0057ff);color:#fff;}
+.btn-secondary{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.status-bar{border-radius:12px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;}
+.status-open{background:#0a2a1a;border:1px solid #1a5c30;color:var(--green);}
+.status-closed{background:#1a1a2a;border:1px solid var(--border);color:var(--muted);}
+.dot{width:9px;height:9px;border-radius:50%;}
+.dot-green{background:var(--green);animation:pulse 2s infinite;}
+.dot-grey{background:var(--muted);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.stat-val{font-size:20px;font-weight:700;color:var(--accent);}
+.stat-val.green{color:var(--green);}
+.stat-val.red{color:var(--red);}
+.log-box{background:#080c18;border:1px solid var(--border);border-radius:10px;padding:10px;max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}
+.log-line{padding:3px 0;border-bottom:1px solid #0d1526;color:#8899bb;}
+.log-line.trade{color:var(--green);}
+.log-line.error{color:var(--red);}
+.log-line.success{color:var(--accent);}
+.trade-row{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.trade-sym{font-weight:700;font-size:14px;}
+.trade-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+.badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;margin-left:5px;}
+.badge-buy{background:#0a2a1a;color:var(--green);}
+.badge-sell{background:#2a0a0a;color:var(--red);}
+.pnl-pos{color:var(--green);font-weight:700;}
+.pnl-neg{color:var(--red);font-weight:700;}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:20px auto;}
+/* Fear & Greed */
+.fg-wrap{text-align:center;padding:10px 0;}
+.fg-score{font-size:52px;font-weight:700;line-height:1;}
+.fg-label{font-size:16px;font-weight:600;margin:4px 0 12px;}
+.fg-bar{height:14px;border-radius:7px;background:linear-gradient(to right,var(--red),var(--yellow),var(--green));position:relative;margin:0 8px 6px;}
+.fg-needle{position:absolute;top:-4px;width:4px;height:22px;background:#fff;border-radius:2px;transform:translateX(-50%);box-shadow:0 0 6px rgba(255,255,255,0.6);}
+.fg-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin:0 8px;}
+/* Risk calc */
+.risk-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:14px;margin-bottom:10px;}
+.risk-result{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:8px;}
+.risk-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.risk-row:last-child{border:none;font-weight:700;}
+/* Signal card */
+.signal-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;}
+.signal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.signal-sym{font-size:18px;font-weight:700;}
+.signal-action{padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;}
+.action-buy{background:#0a2a1a;color:var(--green);border:1px solid var(--green);}
+.action-sell{background:#2a0a0a;color:var(--red);border:1px solid var(--red);}
+.signal-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);}
+.signal-row:last-child{border:none;}
+.signal-key{color:var(--muted);}
+.conf-bar-wrap{margin-top:8px;}
+.conf-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;}
+.conf-fill{height:100%;border-radius:3px;background:linear-gradient(to right,var(--accent),var(--green));}
+.error-box{background:#1a0a0a;border:1px solid #5c1a1a;border-radius:12px;padding:16px;text-align:center;color:var(--red);font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">TRADEX AI</div>
+      <div class="logo-sub">● LIVE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="hstat"><div class="hstat-label">Equity</div><div class="hstat-val" id="h-equity">$0.00</div></div>
+    <div class="hstat"><div class="hstat-label">P&L</div><div class="hstat-val" id="h-pnl" style="color:var(--green)">+$0.00</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('dashboard')"><span class="tab-icon">💰</span>Dashboard</div>
+  <div class="tab" onclick="showTab('signals')"><span class="tab-icon">📡</span>Signals</div>
+  <div class="tab" onclick="showTab('trades')"><span class="tab-icon">📊</span>Trades</div>
+  <div class="tab" onclick="showTab('market')"><span class="tab-icon">🌡️</span>Market</div>
+  <div class="tab" onclick="showTab('risk')"><span class="tab-icon">🧮</span>Risk</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div id="mkt-bar" class="status-bar status-open">
+    <div class="dot dot-green" id="mkt-dot"></div>
+    <span id="mkt-text">Checking market...</span>
+  </div>
+  <div class="grid3">
+    <div class="stat-card"><div class="stat-label">Equity</div><div class="stat-val" id="d-equity">$0</div></div>
+    <div class="stat-card"><div class="stat-label">Cash</div><div class="stat-val" id="d-cash">$0</div></div>
+    <div class="stat-card"><div class="stat-label">Trades</div><div class="stat-val" id="d-count">0</div></div>
+  </div>
+  <div class="grid3">
+    <div class="stat-card"><div class="stat-label">P&L</div><div class="stat-val green" id="d-pnl">+$0</div></div>
+    <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-val" id="d-wr">0%</div></div>
+    <div class="stat-card"><div class="stat-label">Mode</div><div class="stat-val" style="font-size:13px" id="d-mode">...</div></div>
+  </div>
+  <div class="section-title">Live Bot Log</div>
+  <div class="log-box" id="d-log">Loading...</div>
+  <button class="btn btn-primary" style="margin-top:12px" onclick="loadStats()">🔄 Refresh</button>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px;font-size:12px;color:var(--muted);">
+    Mode: <b id="d-mode-label" style="color:var(--yellow)">PAPER</b> — Set BOT_MODE=live in Railway to trade real money.
+  </div>
+</div>
+
+<!-- SIGNALS -->
+<div id="page-signals" class="page">
+  <div class="page-title">AI Signals</div>
+  <div class="page-sub">Live buy/sell signals from the bot</div>
+  <div id="signals-list"><div class="spinner"></div></div>
+  <button class="btn btn-secondary" onclick="loadSignals()">🔄 Refresh Signals</button>
+</div>
+
+<!-- TRADES -->
+<div id="page-trades" class="page">
+  <div class="page-title">Trade History</div>
+  <div class="page-sub">All paper trades executed by the bot</div>
+  <div id="trades-list"><div class="spinner"></div></div>
+</div>
+
+<!-- MARKET / FEAR & GREED -->
+<div id="page-market" class="page">
+  <div class="page-title">Market Sentiment</div>
+  <div class="page-sub">Fear & Greed + top movers</div>
+  <div class="card">
+    <div class="section-title">Fear & Greed Meter</div>
+    <div class="fg-wrap" id="fg-wrap"><div class="spinner"></div></div>
+  </div>
+  <div class="card">
+    <div class="section-title">Today's Movers</div>
+    <div id="movers-list"><div class="spinner"></div></div>
+  </div>
+  <button class="btn btn-secondary" onclick="loadMarket()">🔄 Refresh</button>
+</div>
+
+<!-- RISK CALCULATOR -->
+<div id="page-risk" class="page">
+  <div class="page-title">Risk Calculator</div>
+  <div class="page-sub">Calculate safe position size before trading</div>
+  <div class="card">
+    <input class="risk-input" id="r-account" type="number" placeholder="Account size (e.g. 500)" oninput="calcRisk()"/>
+    <input class="risk-input" id="r-entry" type="number" placeholder="Entry price (e.g. 17.50)" oninput="calcRisk()"/>
+    <input class="risk-input" id="r-stop" type="number" placeholder="Stop loss price (e.g. 16.80)" oninput="calcRisk()"/>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <span style="font-size:12px;color:var(--muted);align-self:center;">Risk %:</span>
+      <button onclick="setRisk(1)" id="rp1" class="btn btn-secondary" style="flex:1;padding:8px;font-size:12px;">1%</button>
+      <button onclick="setRisk(2)" id="rp2" class="btn btn-primary" style="flex:1;padding:8px;font-size:12px;">2%</button>
+      <button onclick="setRisk(3)" id="rp3" class="btn btn-secondary" style="flex:1;padding:8px;font-size:12px;">3%</button>
+      <button onclick="setRisk(5)" id="rp5" class="btn btn-secondary" style="flex:1;padding:8px;font-size:12px;">5%</button>
+    </div>
+    <div class="risk-result" id="risk-result" style="display:none;">
+      <div class="risk-row"><span>Shares to buy</span><span id="rr-shares" style="color:var(--accent);font-size:16px;">—</span></div>
+      <div class="risk-row"><span>Position size</span><span id="rr-size">—</span></div>
+      <div class="risk-row"><span>Max loss</span><span id="rr-loss" style="color:var(--red);">—</span></div>
+      <div class="risk-row"><span>Target (+3%)</span><span id="rr-target" style="color:var(--green);">—</span></div>
+      <div class="risk-row"><span style="color:var(--accent);">% of account</span><span id="rr-pct" style="color:var(--accent);">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://worker-production-0c6e.up.railway.app";
+let riskPct = 2;
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const names = ['dashboard','signals','trades','market','risk'];
+  document.querySelectorAll('.tab')[names.indexOf(name)].classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
+  if(name==='signals') loadSignals();
+  if(name==='market') loadMarket();
+  if(name==='trades') loadTrades();
+}
+
+// ── STATS / DASHBOARD ─────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch(API+'/api/stats');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+
+    const eq = d.paper_equity||0, pnl = d.total_pnl||0;
+    document.getElementById('h-equity').textContent = '$'+eq.toFixed(2);
+    document.getElementById('h-pnl').textContent = (pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);
+    document.getElementById('h-pnl').style.color = pnl>=0?'var(--green)':'var(--red)';
+    document.getElementById('d-equity').textContent = '$'+eq.toFixed(2);
+    document.getElementById('d-cash').textContent = '$'+(d.paper_cash||0).toFixed(2);
+    document.getElementById('d-count').textContent = d.trade_count||0;
+    document.getElementById('d-pnl').textContent = (pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);
+    document.getElementById('d-pnl').className = 'stat-val '+(pnl>=0?'green':'red');
+    document.getElementById('d-mode').textContent = d.bot_mode||'Paper';
+    document.getElementById('d-mode-label').textContent = (d.bot_mode||'PAPER').toUpperCase();
+
+    const wr = d.win_rate||0;
+    const wrEl = document.getElementById('d-wr');
+    wrEl.textContent = wr+'%';
+    wrEl.className = 'stat-val '+(wr>=50?'green':'red');
+
+    // Market open check
+    const et = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+    const h=et.getHours(),m=et.getMinutes(),day=et.getDay();
+    const open = day>=1&&day<=5&&((h>9||(h===9&&m>=30))&&(h<15||(h===15&&m<=30)));
+    const bar=document.getElementById('mkt-bar'), dot=document.getElementById('mkt-dot'), txt=document.getElementById('mkt-text');
+    if(open){bar.className='status-bar status-open';dot.className='dot dot-green';txt.textContent='Market Open ('+et.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+' ET)';}
+    else{bar.className='status-bar status-closed';dot.className='dot dot-grey';txt.textContent='Market Closed';}
+
+    // Logs
+    const logs = d.logs||[];
+    document.getElementById('d-log').innerHTML = logs.length
+      ? logs.map(l=>{
+          const t=new Date(l.created_at).toLocaleTimeString();
+          const cls=l.log_type==='trade'?'trade':l.log_type==='error'?'error':l.log_type==='success'?'success':'';
+          return `<div class="log-line ${cls}">[${t}] ${l.message}</div>`;
+        }).join('')
+      : '<div class="log-line">No logs yet</div>';
+
+  } catch(e) {
+    document.getElementById('page-dashboard').innerHTML = `
+      <div class="error-box">❌ Cannot reach Railway API</div>
+      <button class="btn btn-secondary" onclick="loadStats()" style="margin-top:12px">🔄 Retry</button>`;
+  }
+}
+
+// ── SIGNALS ───────────────────────────────────────────────
+async function loadSignals() {
+  const el = document.getElementById('signals-list');
+  el.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await fetch(API+'/api/prices');
+    const d = await r.json();
+    const prices = d.prices||{};
+    const sorted = Object.entries(prices).sort((a,b)=>b[1].change-a[1].change);
+    if(!sorted.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No data</div>';return;}
+    el.innerHTML = sorted.map(([sym,p])=>{
+      const buy = p.change >= 0.3;
+      const conf = Math.min(99, Math.round(50 + Math.abs(p.change) * 10));
+      return `<div class="signal-card">
+        <div class="signal-header">
+          <span class="signal-sym">${sym}</span>
+          <span class="signal-action ${buy?'action-buy':'action-sell'}">${buy?'BUY':'WATCH'}</span>
+        </div>
+        <div class="signal-row"><span class="signal-key">Price</span><span>$${p.price.toFixed(2)}</span></div>
+        <div class="signal-row"><span class="signal-key">Change</span><span style="color:${p.change>=0?'var(--green)':'var(--red)'}">${p.change>=0?'+':''}${p.change.toFixed(2)}%</span></div>
+        <div class="signal-row"><span class="signal-key">Target</span><span style="color:var(--green)">$${(p.price*1.03).toFixed(2)}</span></div>
+        <div class="signal-row"><span class="signal-key">Stop</span><span style="color:var(--red)">$${(p.price*0.982).toFixed(2)}</span></div>
+        <div class="conf-bar-wrap">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;"><span>Confidence</span><span>${conf}%</span></div>
+          <div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to load signals</div>';
+  }
+}
+
+// ── TRADES ────────────────────────────────────────────────
+async function loadTrades() {
+  const el = document.getElementById('trades-list');
+  el.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await fetch(API+'/api/stats');
+    const d = await r.json();
+    const trades = d.trades||[];
+    if(!trades.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No trades yet</div>';return;}
+    el.innerHTML = trades.map(t=>{
+      const pnl = t.pnl||0;
+      return `<div class="trade-row">
+        <div>
+          <div class="trade-sym">${t.symbol}<span class="badge ${t.action==='BUY'?'badge-buy':'badge-sell'}">${t.action}</span></div>
+          <div class="trade-detail">${t.shares} shares @ $${(t.entry_price||0).toFixed(2)} · ${new Date(t.created_at).toLocaleTimeString()}</div>
+        </div>
+        <div class="${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+$':'-$'}${Math.abs(pnl).toFixed(2)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to load trades</div>';
+  }
+}
+
+// ── MARKET / FEAR & GREED ─────────────────────────────────
+async function loadMarket() {
+  // Load prices for movers
+  try {
+    const r = await fetch(API+'/api/prices');
+    const d = await r.json();
+    const prices = d.prices||{};
+    const sorted = Object.entries(prices).sort((a,b)=>Math.abs(b[1].change)-Math.abs(a[1].change));
+    document.getElementById('movers-list').innerHTML = sorted.map(([sym,p])=>`
+      <div class="trade-row">
+        <div><div class="trade-sym">${sym}</div><div class="trade-detail">$${p.price.toFixed(2)}</div></div>
+        <div style="color:${p.change>=0?'var(--green)':'var(--red)'};font-weight:700">${p.change>=0?'▲':'▼'}${Math.abs(p.change).toFixed(2)}%</div>
+      </div>`).join('');
+  } catch(e) {}
+
+  // Fear & Greed — calculated from price moves
+  try {
+    const r = await fetch(API+'/api/prices');
+    const d = await r.json();
+    const prices = d.prices||{};
+    const changes = Object.values(prices).map(p=>p.change);
+    const avg = changes.reduce((a,b)=>a+b,0)/changes.length;
+    const score = Math.min(99,Math.max(1,Math.round(50 + avg * 8)));
+    const label = score>=75?'Extreme Greed':score>=55?'Greed':score>=45?'Neutral':score>=25?'Fear':'Extreme Fear';
+    const color = score>=60?'var(--green)':score>=40?'var(--yellow)':'var(--red)';
+    document.getElementById('fg-wrap').innerHTML = `
+      <div class="fg-score" style="color:${color}">${score}</div>
+      <div class="fg-label" style="color:${color}">${label}</div>
+      <div class="fg-bar"><div class="fg-needle" style="left:${score}%"></div></div>
+      <div class="fg-row"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6">
+        Based on current momentum across ${changes.length} tracked stocks. 
+        ${score>=60?'Market is bullish — momentum favoring longs.':score>=40?'Mixed signals — trade carefully.':'Caution advised — selling pressure dominant.'}
+      </div>`;
+  } catch(e) {
+    document.getElementById('fg-wrap').innerHTML = '<div style="color:var(--red);text-align:center">Failed to load</div>';
+  }
+}
+
+// ── RISK CALCULATOR ───────────────────────────────────────
+function setRisk(pct) {
+  riskPct = pct;
+  [1,2,3,5].forEach(p=>{
+    document.getElementById('rp'+p).className = p===pct?'btn btn-primary':'btn btn-secondary';
+  });
+  calcRisk();
+}
+
+function calcRisk() {
+  const account = parseFloat(document.getElementById('r-account').value);
+  const entry   = parseFloat(document.getElementById('r-entry').value);
+  const stop    = parseFloat(document.getElementById('r-stop').value);
+  const el      = document.getElementById('risk-result');
+  if(!account||!entry||!stop||stop>=entry){el.style.display='none';return;}
+  const riskAmt  = account * (riskPct/100);
+  const riskPer  = entry - stop;
+  const shares   = Math.floor(riskAmt / riskPer);
+  const size     = shares * entry;
+  const maxLoss  = shares * riskPer;
+  const target   = entry * 1.03;
+  const pctAcct  = (size/account*100).toFixed(1);
+  el.style.display='block';
+  document.getElementById('rr-shares').textContent = shares+' shares';
+  document.getElementById('rr-size').textContent   = '$'+size.toFixed(2);
+  document.getElementById('rr-loss').textContent   = '-$'+maxLoss.toFixed(2);
+  document.getElementById('rr-target').textContent = '$'+target.toFixed(2);
+  document.getElementById('rr-pct').textContent    = pctAcct+'% of account';
+}
+
+// Init
+loadStats();
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>
